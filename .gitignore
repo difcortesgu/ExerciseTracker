@@ -1,0 +1,57 @@
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# generated native folders (Continuous Native Generation)
+/ios
+/android
+.kotlin/
+
+# Native signing material
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Metro
+.metro-health-check*
+
+# test, coverage and mutation reports
+coverage/
+reports/
+.stryker-tmp/
+junit.xml
+
+# Maestro
+.maestro/screenshots/
+e2e/output/
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# OS / editors
+.DS_Store
+.idea/
+*.swp
+
+# local env files
+.env
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# local SQLite files created by tools
+*.db
+*.sqlite

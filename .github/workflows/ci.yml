@@ -1,0 +1,47 @@
+# Quality gates for every push and pull request (S0-28). Needs no secrets.
+# CD (EAS Update / EAS Build) is deferred until an Expo account exists (BACKLOG "Deferred").
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Typecheck, lint, format, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+
+      - name: Set up Node (version from .nvmrc)
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint (including architecture boundary rules)
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Test with per-layer coverage thresholds
+        run: npm test -- --coverage --ci
+
+      - name: Expo doctor
+        run: npx --yes expo-doctor

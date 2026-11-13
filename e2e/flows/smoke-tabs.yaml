@@ -1,0 +1,65 @@
+# S0-25 smoke flow: the app loads in Expo Go and every one of the 5 tabs shows its screen.
+#
+# Selectors are the accessibility labels that the RNTL tests also query (Maestro matches `text`
+# against both visible text and the Android content description):
+#   tab buttons    "Workout", "Routines", "Exercises", "Progress", "Settings"  (app-tabs.tsx)
+#   screens        "<Tab> screen"                                              (shared/ui Screen)
+#   empty state    "Empty state" containing "Coming soon"                      (shared/ui EmptyState)
+#   startup        "Loading Exercise Tracker" / "Startup failed"               (AppBootstrapGate)
+# Tab order is covered by src/core/presentation/app-tabs.test.tsx, not here.
+#
+# Runs against Expo Go (appId host.exp.exponent) and opens the dev server through a deep link.
+# Override the URL with `npm run e2e -- -e EXPO_URL=exp://<LAN-IP>:8081` (see e2e/README.md).
+appId: host.exp.exponent
+name: Smoke - app opens in Expo Go and shows all 5 tabs
+tags:
+  - smoke
+env:
+  EXPO_URL: ${EXPO_URL || 'exp://127.0.0.1:8081'}
+---
+- launchApp:
+    stopApp: true
+- openLink: ${EXPO_URL}
+
+# Expo Go's first-run developer-menu introduction may cover the app; dismiss it if shown.
+- runFlow:
+    when:
+      visible: 'Continue'
+    commands:
+      - tapOn: 'Continue'
+
+# The first bundle over the network can take a while; the startup gate shows a loading state
+# first and the Workout tab once migrations have run.
+- extendedWaitUntil:
+    visible: 'Workout screen'
+    timeout: 120000
+- assertNotVisible: 'Startup failed'
+- runFlow:
+    when:
+      visible: 'Continue'
+    commands:
+      - tapOn: 'Continue'
+
+# Workout (initial tab)
+- assertVisible: 'Workout screen'
+- assertVisible: '.*Coming soon.*'
+
+- tapOn: 'Routines'
+- assertVisible: 'Routines screen'
+- assertVisible: '.*Coming soon.*'
+
+- tapOn: 'Exercises'
+- assertVisible: 'Exercises screen'
+- assertVisible: '.*Coming soon.*'
+
+- tapOn: 'Progress'
+- assertVisible: 'Progress screen'
+- assertVisible: '.*Coming soon.*'
+
+- tapOn: 'Settings'
+- assertVisible: 'Settings screen'
+- assertVisible: '.*Coming soon.*'
+
+# Back to the first tab: navigation works in both directions.
+- tapOn: 'Workout'
+- assertVisible: 'Workout screen'
