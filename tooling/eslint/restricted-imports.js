@@ -1,7 +1,8 @@
 // @ts-check
 /**
- * External packages each layer must not import (gitignore-style patterns of `no-restricted-imports`).
- * Internal layer/module rules live in boundary-policies.js.
+ * External packages (gitignore-style patterns of `no-restricted-imports`) and I/O globals
+ * (`no-restricted-globals`) each layer must not use. Internal layer/module rules live in
+ * boundary-policies.js.
  */
 
 const DATABASE_PACKAGES = ['expo-sqlite', 'drizzle-orm', 'better-sqlite3'];
@@ -21,6 +22,10 @@ const DEVICE_SERVICE_PACKAGES = [
   'expo-crypto',
   'expo-document-picker',
   'expo-sharing',
+  // Self-update (Sprint 0.5, ADR-003): installed-app info, execution environment, installer hand-off.
+  'expo-application',
+  'expo-constants',
+  'expo-intent-launcher',
 ];
 
 const FRAMEWORK_PACKAGES = [
@@ -68,7 +73,17 @@ const forbiddenImportsInProductionAdapters = {
   ],
 };
 
+const NETWORK_MESSAGE =
+  'network access is I/O: put it in an infrastructure adapter behind an application port (ADR-003).';
+
+/** HTTP from domain, application or presentation would bypass the ports (e.g. `ReleaseSource`). */
+const forbiddenNetworkGlobals = ['fetch', 'XMLHttpRequest', 'WebSocket'].map((name) => ({
+  name,
+  message: `${name}: ${NETWORK_MESSAGE}`,
+}));
+
 module.exports = {
+  forbiddenNetworkGlobals,
   forbiddenImportsInInnerLayers,
   forbiddenImportsInPresentation,
   forbiddenImportsInProductionAdapters,

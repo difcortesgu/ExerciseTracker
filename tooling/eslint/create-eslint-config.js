@@ -31,6 +31,7 @@ const {
 } = require('./layers');
 const { elementDescriptors, fileDescriptors, dependencyPolicies } = require('./boundary-policies');
 const {
+  forbiddenNetworkGlobals,
   forbiddenImportsInInnerLayers,
   forbiddenImportsInPresentation,
   forbiddenImportsInProductionAdapters,
@@ -136,6 +137,11 @@ function createEslintConfig({ rootDir }) {
       rules: {
         'no-restricted-imports': ['error', forbiddenImportsInProductionAdapters],
       },
+    },
+    {
+      // Network access must come through a port (ADR-003); only infrastructure adapters use HTTP.
+      files: [...DOMAIN_FILES, ...APPLICATION_FILES, ...PRESENTATION_FILES],
+      rules: { 'no-restricted-globals': ['error', ...forbiddenNetworkGlobals] },
     },
     {
       // Time must come through the Clock port (S0-14); infrastructure adapters may read it.

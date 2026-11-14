@@ -1,4 +1,4 @@
-import { COVERAGE_POLICY, LAYER_GLOBS } from './coverage-policy';
+import { COVERAGE_POLICY, LAYER_GLOBS, RELEASE_TOOLING_GLOB } from './coverage-policy';
 
 /**
  * Guard rail for docs/ENGINEERING_STANDARDS.md §4.3: thresholds may only go up.
@@ -12,6 +12,8 @@ describe('coverage policy', () => {
     [LAYER_GLOBS.presentation]: { lines: 85, branches: 85, functions: 85, statements: 85 },
     [LAYER_GLOBS.core]: { lines: 90, branches: 90, functions: 90, statements: 90 },
     global: { lines: 90, branches: 85, functions: 90, statements: 90 },
+    // CI release scripts (Sprint 0.5, ADR-003): pure decision logic, held to the domain standard.
+    [RELEASE_TOOLING_GLOB]: { lines: 100, branches: 100, functions: 100, statements: 100 },
   };
 
   it.each(Object.entries(floors))('does not go below the agreed floor for %s', (key, floor) => {
@@ -29,5 +31,9 @@ describe('coverage policy', () => {
 
   it('applies the domain threshold to the shared kernel and every module domain', () => {
     expect(LAYER_GLOBS.domain).toBe('src/{shared,modules/*}/domain/**/*.{ts,tsx}');
+  });
+
+  it('measures the CI release scripts under tooling/release', () => {
+    expect(RELEASE_TOOLING_GLOB).toBe('tooling/release/**/*.js');
   });
 });

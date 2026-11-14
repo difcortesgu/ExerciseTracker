@@ -92,6 +92,13 @@ Sprint loop: **Plan** (product-owner writes Given/When/Then criteria, architect 
 - ADR-001 (architecture) and ADR-002 (timer strategy)
 - **Demo:** app opens in Expo Go with 5 empty tabs; `npm test -- --coverage` green with thresholds enforced
 
+### Sprint 0.5 — Continuous delivery & self-update
+- On every push to `main`, after the quality gates pass, GitHub Actions builds a **signed release APK with Gradle** (no EAS, no Expo account) and publishes it as a **GitHub Release** on `difcortesgu/ExerciseTracker`; a failing gate means no release
+- One fixed signing key from 4 repo secrets, so every APK installs over the previous one; monotonically increasing build number (= Android versionCode)
+- In-app self-update: at startup the app checks the latest GitHub Release and, if the build is strictly newer, asks "Build N available – Update / Later", downloads with progress and opens Android's system installer (the user always confirms; never silent). Never blocks startup; inactive in Expo Go and dev builds
+- README: first install, "install unknown apps" permission, secrets, keystore loss; ADR-003
+- **Demo:** push to `main` → release with APK → install on the phone → push again → the app offers the new build and updates itself, keeping its data
+
 ### Sprint 1 — Exercise library
 - Seed built-in library (free-exercise-db: ~800 exercises, muscles, equipment, instructions, images)
 - Browse/search/filter by muscle, equipment, category; exercise detail with image gallery

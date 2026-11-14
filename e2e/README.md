@@ -6,7 +6,7 @@ and `npm run e2e` runs all of them (`maestro test e2e/flows`).
 
 | Flow | Journey | Since |
 |---|---|---|
-| `flows/smoke-tabs.yaml` | app loads past the startup gate; each of the 5 tabs shows its screen and "coming soon" empty state; back to Workout | Sprint 0 (S0-25) |
+| `flows/smoke-tabs.yaml` | app loads past the startup gate; no update dialog in Expo Go; each of the 5 tabs shows its screen and "coming soon" empty state; Settings shows "(development build)"; back to Workout | Sprint 0 (S0-25), Sprint 0.5 (S05-08, S05-11) |
 
 ## One-time setup
 

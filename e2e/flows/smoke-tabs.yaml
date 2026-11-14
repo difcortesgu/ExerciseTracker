@@ -6,6 +6,8 @@
 #   screens        "<Tab> screen"                                              (shared/ui Screen)
 #   empty state    "Empty state" containing "Coming soon"                      (shared/ui EmptyState)
 #   startup        "Loading Exercise Tracker" / "Startup failed"               (AppBootstrapGate)
+#   app version    "App version" containing "development build"                (settings-screen.tsx)
+#   update prompt  "Update" / "Later" buttons; never shown in Expo Go          (updates UpdatePrompt)
 # Tab order is covered by src/core/presentation/app-tabs.test.tsx, not here.
 #
 # Runs against Expo Go (appId host.exp.exponent) and opens the dev server through a deep link.
@@ -34,6 +36,8 @@ env:
     visible: 'Workout screen'
     timeout: 120000
 - assertNotVisible: 'Startup failed'
+# Sprint 0.5 (S05-06/S05-08): the self-updater is inactive in Expo Go, so no update dialog appears.
+- assertNotVisible: 'Later'
 - runFlow:
     when:
       visible: 'Continue'
@@ -59,6 +63,8 @@ env:
 - tapOn: 'Settings'
 - assertVisible: 'Settings screen'
 - assertVisible: '.*Coming soon.*'
+# S05-11: Expo Go shows that it is a development build instead of a build number.
+- assertVisible: 'Version .* \(development build\)'
 
 # Back to the first tab: navigation works in both directions.
 - tapOn: 'Workout'

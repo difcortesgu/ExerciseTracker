@@ -184,3 +184,40 @@ describe('reading the clock directly (must go through the Clock port)', () => {
     expect(errors).toEqual([]);
   });
 });
+
+describe('network access (must go through a port, ADR-003)', () => {
+  const layersWithoutNetworkAccess = [
+    'src/shared/domain/x.ts',
+    'src/modules/alpha/domain/x.ts',
+    'src/modules/alpha/application/x.ts',
+    'src/modules/alpha/presentation/x.tsx',
+    'src/core/presentation/x.tsx',
+  ];
+
+  it.each(layersWithoutNetworkAccess)('rejects fetch() in %s', async (file) => {
+    const errors = await linter.lintAs(
+      file,
+      "export const load = (): Promise<unknown> => fetch('https://example.com');\n",
+    );
+
+    expect(ruleIdsOf(errors)).toContain('no-restricted-globals');
+  });
+
+  it.each(layersWithoutNetworkAccess)('rejects XMLHttpRequest in %s', async (file) => {
+    const errors = await linter.lintAs(
+      file,
+      'export const request = (): XMLHttpRequest => new XMLHttpRequest();\n',
+    );
+
+    expect(ruleIdsOf(errors)).toContain('no-restricted-globals');
+  });
+
+  it('allows an infrastructure adapter to use fetch', async () => {
+    const errors = await linter.lintAs(
+      'src/modules/alpha/infrastructure/x.ts',
+      "export const load = (): Promise<unknown> => fetch('https://example.com');\n",
+    );
+
+    expect(errors).toEqual([]);
+  });
+});

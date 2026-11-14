@@ -22,9 +22,17 @@ place, and why.
   react-native-screens, react-native-safe-area-context), expo-splash-screen, expo-status-bar,
   expo-system-ui (needed for `userInterfaceStyle: automatic` on Android), expo-sqlite,
   expo-crypto (system `IdGenerator`), drizzle-orm.
+- *Amended by ADR-003 (Sprint 0.5):* `expo-application`, `expo-file-system` and
+  `expo-intent-launcher` were added for the self-updater. All three are part of Expo Go, so the
+  "no development build" rule still holds.
 - `react-dom` is pinned to the React version only because npm otherwise fails to resolve
   expo-router's *optional* web peers. It is never bundled for Android.
-- The template's reanimated, gesture-handler, worklets and web packages were removed (YAGNI).
+- The template's reanimated, gesture-handler, worklets and web packages were removed as
+  **direct** dependencies (YAGNI). *Clarified by ADR-003 (Sprint 0.5 close-out):*
+  `react-native-reanimated` and `react-native-worklets` are still installed transitively (they are
+  dependencies of `expo-router` and `expo-modules-core`), and since SDK 54 Expo autolinks
+  transitive React Native modules, so their native code is part of the release APK. No app code
+  imports them, both are part of Expo Go, and the "no development build" rule is unaffected.
   The `reactCompiler` and `typedRoutes` experiments are off for now. The React Compiler's
   memoisation branches would distort presentation branch coverage, and typed routes need a
   generated `expo-env.d.ts` that a clean CI checkout doesn't have. Both can be revisited when there
@@ -61,6 +69,11 @@ On top of that, `no-restricted-imports` forbids per layer:
   packages (`expo-audio`, `expo-speech`, `expo-haptics`, `expo-notifications`, `expo-file-system`, …),
   which must sit behind ports;
 - production adapters and wiring: `better-sqlite3` (Node-only test driver).
+
+*Amended by ADR-003:* `expo-application`, `expo-constants` and `expo-intent-launcher` joined the
+device-service list (forbidden in presentation), and the network globals `fetch`, `XMLHttpRequest`
+and `WebSocket` are forbidden in domain, application and presentation (`no-restricted-globals`;
+HTTP belongs in infrastructure adapters behind a port).
 
 Reading the clock (`Date.now()`, `new Date()`, `Date()`, `performance.now()`) is forbidden in
 domain, application and presentation; time comes from the `Clock` port. `console` is only allowed
@@ -188,6 +201,7 @@ Defined in `tooling/jest/coverage-policy.js`. Thresholds can only go up:
 | `src/{modules/*/presentation,shared/ui}/**` | 85 | 85 | 85 | 85 |
 | `src/core/**` | 90 | 90 | 90 | 90 |
 | global (aggregate of all measured files) | 90 | 85 | 90 | 90 |
+| `tooling/release/**/*.js` (CI release scripts, added by ADR-003) | 100 | 100 | 100 | 100 |
 
 - **Core = 90%:** the container and bootstrap sequence are logic and are tested like application
   code. The composition root wires real adapters, and its test resolves every token with native

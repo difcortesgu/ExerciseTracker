@@ -1,5 +1,16 @@
-# Quality gates for every push and pull request (S0-28). Needs no secrets.
-# CD (EAS Update / EAS Build) is deferred until an Expo account exists (BACKLOG "Deferred").
+# CI and continuous delivery (S0-28; Sprint 0.5, ADR-003).
+#
+# - quality:       every push and pull request. Read-only, needs no secrets.
+# - release-plan:  pushes to main only, after quality passed. Checks the release settings, derives
+#                  the build number and decides whether this run may publish (read-only).
+# - release:       builds a signed release APK with Gradle (no EAS, no Expo account), verifies its
+#                  signature, package and versionCode, and publishes GitHub Release "Build N" with
+#                  the APK attached. The only job with write access to repository contents.
+#
+# Repository settings (README "Release setup"): secrets ANDROID_KEYSTORE_BASE64,
+# ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD; variable ANDROID_CERT_SHA256
+# (expected signing certificate, public); optional variable BUILD_NUMBER_OFFSET.
+# Logic lives in tooling/release (tested, 100% coverage); this file only wires it.
 name: CI
 
 on:
@@ -11,7 +22,9 @@ permissions:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Branches and pull requests: a newer push cancels the older run. main: runs queue instead, so a
+  # release is never cancelled half-published and releases are published in push order.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   quality:
@@ -21,6 +34,8 @@ jobs:
     steps:
       - name: Check out
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Set up Node (version from .nvmrc)
         uses: actions/setup-node@v5
@@ -45,3 +60,165 @@ jobs:
 
       - name: Expo doctor
         run: npx --yes expo-doctor
+
+  release-plan:
+    name: Plan release
+    needs: quality
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      build_number: ${{ steps.build-number.outputs.build_number }}
+      publish: ${{ steps.plan.outputs.publish }}
+      tag: ${{ steps.plan.outputs.tag }}
+      title: ${{ steps.plan.outputs.title }}
+      asset_name: ${{ steps.plan.outputs.asset_name }}
+    steps:
+      # Keeps the job's read-only token in .git/config: "Plan release" lists the remote tags.
+      - name: Check out
+        uses: actions/checkout@v5
+
+      - name: Set up Node (version from .nvmrc)
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+
+      # Fails fast, naming each missing setting, before anything is built (S05-02).
+      - name: Check release settings (signing secrets, certificate fingerprint)
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_CERT_SHA256: ${{ vars.ANDROID_CERT_SHA256 }}
+        run: node tooling/release/release-cli.js check-release-settings
+
+      # Build number = run_number (+ BUILD_NUMBER_OFFSET): grows with every new run, kept by re-runs.
+      - name: Build number
+        id: build-number
+        env:
+          BUILD_NUMBER_OFFSET: ${{ vars.BUILD_NUMBER_OFFSET }}
+        run: node tooling/release/release-cli.js build-number
+
+      # Never publish a number that is not greater than every published build-<n> tag (S05-01).
+      - name: Plan release
+        id: plan
+        run: |
+          git ls-remote --tags origin > "$RUNNER_TEMP/remote-tags.txt"
+          node tooling/release/release-cli.js plan-release "$RUNNER_TEMP/remote-tags.txt"
+
+  release:
+    name: Build, verify and publish the signed APK
+    needs: release-plan
+    if: needs.release-plan.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      APP_BUILD_NUMBER: ${{ needs.release-plan.outputs.build_number }}
+      RELEASE_TAG: ${{ needs.release-plan.outputs.tag }}
+      RELEASE_TITLE: ${{ needs.release-plan.outputs.title }}
+      APK_NAME: ${{ needs.release-plan.outputs.asset_name }}
+      APK_PATH: android/app/build/outputs/apk/release/app-release.apk
+    # The write token is handed only to the two `gh` steps (GH_TOKEN per step) and is not persisted
+    # in .git/config, so npm lifecycle scripts, prebuild and Gradle plugins never see it (QA-05-4).
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node (version from .nvmrc)
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle (dependency cache)
+        uses: gradle/actions/setup-gradle@v6
+
+      # Continuous Native Generation: android/ is generated from app.json + app.config.js and never
+      # committed. APP_BUILD_NUMBER (job env) becomes android.versionCode.
+      - name: Generate the native Android project
+        run: npx expo prebuild --platform android --clean --no-install
+
+      # The keystore exists only in the runner's temp folder during this job and is never uploaded.
+      - name: Decode the signing keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          umask 077
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+
+      # Android Gradle Plugin "injected signing" properties sign every built variant with the given
+      # key, so the generated build.gradle (which signs release with the debug key) is not edited.
+      - name: Build the signed release APK
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: >-
+          ./gradlew assembleRelease --no-daemon
+          -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+          -Pandroid.injected.signing.store.file="$RUNNER_TEMP/release.keystore"
+          -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD"
+          -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS"
+          -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
+
+      - name: Delete the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
+
+      - name: Locate Android build tools
+        run: echo "BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)" >> "$GITHUB_ENV"
+
+      # Valid signature, exactly one signer, and its SHA-256 equals ANDROID_CERT_SHA256 (S05-02).
+      - name: Verify signature and signing certificate
+        env:
+          ANDROID_CERT_SHA256: ${{ vars.ANDROID_CERT_SHA256 }}
+        run: |
+          "$BUILD_TOOLS/apksigner" verify --print-certs "$APK_PATH" > "$RUNNER_TEMP/certificates.txt"
+          node tooling/release/release-cli.js verify-certificate "$RUNNER_TEMP/certificates.txt"
+
+      # Package name, versionCode = build number, unchanged versionName, install permission.
+      - name: Verify package, versionCode, versionName and permissions
+        run: |
+          "$BUILD_TOOLS/aapt2" dump badging "$APK_PATH" > "$RUNNER_TEMP/badging.txt"
+          node tooling/release/release-cli.js verify-apk "$RUNNER_TEMP/badging.txt"
+
+      - name: Write release notes
+        run: |
+          COMMIT_SUBJECT="$(git log -1 --format=%s)" \
+            node tooling/release/release-cli.js release-notes "$RUNNER_TEMP/release-notes.md"
+
+      # Created as a draft (no tag yet) with the APK, then published as "latest": a release is never
+      # visible without its APK, and the tag only appears when the release is published.
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp "$APK_PATH" "$RUNNER_TEMP/$APK_NAME"
+          gh release create "$RELEASE_TAG" "$RUNNER_TEMP/$APK_NAME" \
+            --draft --title "$RELEASE_TITLE" --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --target "$GITHUB_SHA"
+          gh release edit "$RELEASE_TAG" --draft=false --latest
+
+      - name: Remove an unfinished draft release
+        if: failure() || cancelled()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft 2>/dev/null)" = "true" ]; then
+            gh release delete "$RELEASE_TAG" --yes
+          fi

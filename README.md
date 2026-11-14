@@ -34,6 +34,100 @@ Expo SDK 58. Every dependency runs in Expo Go; no development build is needed (A
 Before calling any task done: `npx tsc --noEmit`, `npm run lint`, `npm run format:check`,
 `npm test -- --coverage`. CI (`.github/workflows/ci.yml`) runs the same gates plus `expo-doctor`.
 
+## Release APK and in-app updates
+
+Every push to `main` that passes all quality gates builds a **signed release APK** in GitHub
+Actions (Gradle, no EAS or Expo account) and publishes it as GitHub Release **"Build N"** with one
+asset, `exercise-tracker-build-N.apk`. N only ever goes up and is the APK's Android `versionCode`.
+Branches and pull requests only run the gates. Design and trade-offs:
+[ADR-003](docs/adr/003-release-builds-and-self-update.md).
+
+Good to know:
+
+- **The release app and Expo Go are separate apps** on the phone (package
+  `com.farid.exercisetracker` vs Expo Go). Installing one never replaces the other, and they don't
+  share data.
+- **Development in Expo Go is unchanged.** The updater is inactive there (and in any development
+  bundle): no request to GitHub, no dialog. Settings shows "Version 0.1.0 (development build)".
+- **Real phones only:** the APK contains only ARM code (`arm64-v8a`, `armeabi-v7a`), so it does not
+  install on x86/x86_64 emulators. Use Expo Go on emulators.
+
+### Install the app on your phone (first time)
+
+1. On the phone, open `https://github.com/difcortesgu/ExerciseTracker/releases/latest` in the
+   browser and download the `.apk` asset.
+2. Open the downloaded file. Android asks once to allow your browser (or file manager) to
+   **"Install unknown apps"**: allow it, go back, and install.
+3. Open Exercise Tracker. Settings shows "Version 0.1.0 (build N)".
+
+### How updates work
+
+- At every start (once per launch, only after a successful startup) the app asks GitHub for the
+  latest release. If its build number is higher than the installed one, it shows
+  **"Build N available (size)"** with **Update** and **Later**. Nothing is downloaded before you
+  tap Update. Offline, or when GitHub can't be reached, nothing is shown.
+- **Later** hides the offer until the app is fully closed and started again.
+- **Update** downloads with progress (you can cancel; on failure: **Retry** / **Close**), then a
+  short note explains the next step and **Open installer** hands the APK to Android's own
+  installer.
+- The first time, Android asks you to allow **"Install unknown apps" for Exercise Tracker**
+  itself. After that, Android still asks you to **confirm every install**: the app never installs
+  silently. The update installs over the old build and keeps your data.
+- Android only accepts an update signed with the same key as the installed app (see "Keep the
+  keystore safe" below).
+
+### Release setup (one time, repository owner)
+
+Until these settings exist, every push to `main` fails in the "Plan release" job with a message
+naming what is missing, and nothing is published.
+
+1. Create the release keystore **once** (keep the passwords you choose):
+
+   ```bash
+   keytool -genkeypair -v -storetype PKCS12 -keystore exercise-tracker-release.keystore \
+     -alias exercise-tracker -keyalg RSA -keysize 4096 -validity 36500
+   ```
+
+2. Read its SHA-256 certificate fingerprint (public information) from the `SHA256:` line:
+
+   ```bash
+   keytool -list -v -keystore exercise-tracker-release.keystore -alias exercise-tracker
+   ```
+
+3. Base64-encode the keystore on one line:
+
+   ```bash
+   base64 -w0 exercise-tracker-release.keystore > keystore.b64                 # Linux
+   base64 -i exercise-tracker-release.keystore -o keystore.b64                 # macOS
+   ```
+
+4. In GitHub: repository → Settings → Secrets and variables → Actions.
+
+   | Name | Kind | Value |
+   |---|---|---|
+   | `ANDROID_KEYSTORE_BASE64` | secret | contents of `keystore.b64` |
+   | `ANDROID_KEYSTORE_PASSWORD` | secret | the keystore password |
+   | `ANDROID_KEY_ALIAS` | secret | `exercise-tracker` (the `-alias` above) |
+   | `ANDROID_KEY_PASSWORD` | secret | the key password (with PKCS12 usually the keystore password) |
+   | `ANDROID_CERT_SHA256` | **variable** (not a secret) | the fingerprint from step 2; `AB:CD:…` or plain hex |
+   | `BUILD_NUMBER_OFFSET` | variable, optional | whole number ≥ 0, default 0 |
+
+   CI checks that every APK is signed by exactly this certificate before publishing it.
+   `BUILD_NUMBER_OFFSET` is only needed if the workflow's run counter ever starts again (e.g. the
+   workflow file is recreated): set it so that new build numbers are above the last published one.
+
+5. Delete `keystore.b64` and never commit the keystore or its base64 form. Push to `main`: the run
+   shows "Typecheck, lint, format, test" → "Plan release" → "Build, verify and publish the signed
+   APK", and the release appears under Releases.
+
+### Keep the keystore safe
+
+Back up the keystore file and both passwords outside the repository (password manager or encrypted
+drive). **If the keystore or its passwords are lost, no future build can install over the app
+already on the phone.** You would have to create a new keystore, uninstall the app and install the
+new build, and **all local data is lost** unless it was exported first (backup arrives in
+Sprint 6).
+
 ## End-to-end smoke test (Maestro, local only)
 
 Needs the Maestro CLI, `adb` and Expo Go on an Android phone or emulator (one-time setup in
@@ -61,7 +155,7 @@ score of 80%.
 
 ```
 app/              expo-router routes (thin: render a screen from a module's index.ts)
-src/core/         di (composition root), bootstrap (startup sequence), presentation (React DI binding, startup UI)
+src/core/         di (composition root), bootstrap (startup sequence), presentation (app shell, React DI binding, startup UI)
 src/shared/       domain (Result, ids, units), application (ports), infrastructure (DB, adapters), ui (design system)
 src/modules/<m>/  domain / application / infrastructure / presentation + public index.ts
 test/             fakes, builders, contracts (shared test support; never imported by production code)

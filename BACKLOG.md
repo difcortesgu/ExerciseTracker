@@ -4,7 +4,32 @@ Maintained by the product-owner. Requirements come from `PLAN.md`. Stories and a
 
 ## In progress
 
+### Sprint 0.5 — Continuous delivery & self-update (`docs/sprints/sprint-0.5.md`)
+
+Status: planned, waiting for architect Phase 1. Module `updates` is a placeholder name until the architect decides where the feature lives (open question A1).
+
+| ID | Story | Module | Owner |
+|---|---|---|---|
+| S05-01 | Monotonically increasing build number (= Android versionCode) | tooling | architect |
+| S05-02 | Signed release APK built in CI (Gradle, 4 secrets, fingerprint check) | tooling | architect |
+| S05-03 | Publish a GitHub Release on every push to `main`, only after all gates pass | tooling | architect |
+| S05-04 | Every release installs over the previous one | tooling | architect |
+| S05-05 | Update decision: offer only a strictly newer build; release parsing | updates/domain | core-dev |
+| S05-06 | Check for an update at startup; never blocks, inactive in Expo Go | updates/application | core-dev |
+| S05-07 | GitHub latest-release adapter (timeouts, rate limit, malformed data) | updates/infrastructure | core-dev |
+| S05-08 | Startup update prompt "Build N available – Update / Later" | updates/presentation, core | ui-dev |
+| S05-09 | Download with progress, cancel, error and retry | updates (all layers) | core-dev + ui-dev |
+| S05-10 | Hand the APK to Android's system installer (user confirms) | updates (all layers) | core-dev + ui-dev |
+| S05-11 | Show the installed build in Settings (proposed, Q1) | settings/presentation, updates | ui-dev |
+| S05-12 | README: install, update, secrets, keystore loss | docs | architect |
+| S05-13 | ADR-003 Release builds and self-update | docs | architect |
+| S05-14 | On-device update verification | tooling (manual) | qa-engineer |
+
+## Done
+
 ### Sprint 0 — Foundations (`docs/sprints/sprint-0.md`)
+
+Done per the main session (2026-11-13). Device checks still open from the Sprint 0 QA report are tracked under "Carry-over from Sprint 0" (Maestro run).
 
 | ID | Story | Module | Owner |
 |---|---|---|---|
@@ -90,10 +115,9 @@ Maintained by the product-owner. Requirements come from `PLAN.md`. Stories and a
 - Optional: development build / APK if background timing needs a foreground service
 - Demo: installable build, backup + restore
 
-## Done
-
-_Nothing yet._
-
 ## Deferred
 
-- **CD via EAS** (EAS Update to Expo Go / EAS Build): needs an Expo account and an `EXPO_TOKEN` GitHub secret. Revisit once the GitHub repo exists.
+- ~~**CD via EAS** (EAS Update to Expo Go / EAS Build)~~: **superseded on 2026-11-13.** The user chose continuous delivery without EAS or an Expo account: GitHub Actions builds a signed APK with Gradle and publishes it as a GitHub Release, and the app updates itself. Planned as Sprint 0.5 (`docs/sprints/sprint-0.5.md`). No `EXPO_TOKEN` is needed.
+- **Over-the-air JS updates (EAS Update) and Play Store distribution:** not requested; would need an Expo account / Play Console. Revisit only if the user asks.
+- **More update triggers** (check on resume, scheduled check, manual "Check for updates" in Settings): out of scope for Sprint 0.5 (open question Q3 there).
+- **Remembering "Later" / skipping a build / mandatory updates:** out of scope for Sprint 0.5; "Later" applies to the current launch only.

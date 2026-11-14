@@ -159,6 +159,15 @@ describe('framework and I/O imports in inner layers', () => {
     },
   );
 
+  it.each(['expo-application', 'expo-constants', 'expo-file-system', 'expo-intent-launcher'])(
+    'rejects a presentation file reading app/device information or files through %s directly (Sprint 0.5, ADR-003)',
+    async (pkg) => {
+      const errors = await linter.lintAs('src/modules/alpha/presentation/x.tsx', importing(pkg));
+
+      expect(ruleIdsOf(errors)).toContain(RESTRICTED_IMPORT);
+    },
+  );
+
   it.each(['react', 'react-native', 'expo-router'])(
     'allows a presentation file importing the UI package %s',
     async (pkg) => {

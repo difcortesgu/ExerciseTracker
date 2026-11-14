@@ -9,6 +9,12 @@
 
 const { LAYER_GLOBS } = require('../layers');
 
+/**
+ * CI release scripts (Sprint 0.5, ADR-003): build number, release plan, signature and APK checks.
+ * They decide whether a release is published, so they are held to the domain standard (100%).
+ */
+const RELEASE_TOOLING_GLOB = 'tooling/release/**/*.js';
+
 /** @param {number} lines @param {number} branches @param {number} functions @param {number} statements */
 const threshold = (lines, branches, functions, statements) => ({
   lines,
@@ -25,6 +31,7 @@ const COVERAGE_POLICY = Object.freeze({
   [LAYER_GLOBS.infrastructure]: threshold(90, 90, 90, 90),
   [LAYER_GLOBS.presentation]: threshold(85, 85, 85, 85),
   [LAYER_GLOBS.core]: threshold(90, 90, 90, 90),
+  [RELEASE_TOOLING_GLOB]: threshold(100, 100, 100, 100),
 });
 
-module.exports = { COVERAGE_POLICY, LAYER_GLOBS };
+module.exports = { COVERAGE_POLICY, LAYER_GLOBS, RELEASE_TOOLING_GLOB };
