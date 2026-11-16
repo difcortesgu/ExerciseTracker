@@ -187,15 +187,15 @@ screenshot. Steps 0 to 2 also close the "real GitHub run" part of S05-01 to S05-
 **0. One-time setup (on your computer)**
 - [ ] 0.1 Create the release keystore **once** and back it up somewhere safe outside the repo
   (password manager or an encrypted drive). Losing it means no more updates (README, S05-12):
-  `keytool -genkeypair -v -storetype PKCS12 -keystore exercise-tracker-release.keystore -alias exercise-tracker -keyalg RSA -keysize 4096 -validity 36500`
+  `keytool -genkeypair -v -storetype PKCS12 -keystore exercise-tracker-release.keystore -alias release-key -keyalg RSA -keysize 4096 -validity 36500`
 - [ ] 0.2 Read the certificate fingerprint (it is public):
-  `keytool -list -v -keystore exercise-tracker-release.keystore -alias exercise-tracker`, and
+  `keytool -list -v -keystore exercise-tracker-release.keystore -alias release-key`, and
   copy the `SHA256:` line (`AB:CD:…`).
 - [ ] 0.3 Base64-encode the keystore on one line: `base64 -w0 exercise-tracker-release.keystore > keystore.b64`
   (macOS: `base64 -i exercise-tracker-release.keystore -o keystore.b64`).
 - [ ] 0.4 GitHub → repository → Settings → Secrets and variables → Actions:
   secrets `ANDROID_KEYSTORE_BASE64` (contents of `keystore.b64`), `ANDROID_KEYSTORE_PASSWORD`,
-  `ANDROID_KEY_ALIAS` (`exercise-tracker`), `ANDROID_KEY_PASSWORD`; **variable** (not a secret)
+  `ANDROID_KEY_ALIAS` (`release-key`), `ANDROID_KEY_PASSWORD`; **variable** (not a secret)
   `ANDROID_CERT_SHA256` = the fingerprint from 0.2. Then delete `keystore.b64`.
 - [ ] 0.5 Never commit the keystore or `keystore.b64` (`git status` must not list them).
 

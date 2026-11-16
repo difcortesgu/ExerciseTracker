@@ -85,13 +85,13 @@ naming what is missing, and nothing is published.
 
    ```bash
    keytool -genkeypair -v -storetype PKCS12 -keystore exercise-tracker-release.keystore \
-     -alias exercise-tracker -keyalg RSA -keysize 4096 -validity 36500
+     -alias release-key -keyalg RSA -keysize 4096 -validity 36500
    ```
 
 2. Read its SHA-256 certificate fingerprint (public information) from the `SHA256:` line:
 
    ```bash
-   keytool -list -v -keystore exercise-tracker-release.keystore -alias exercise-tracker
+   keytool -list -v -keystore exercise-tracker-release.keystore -alias release-key
    ```
 
 3. Base64-encode the keystore on one line:
@@ -107,12 +107,15 @@ naming what is missing, and nothing is published.
    |---|---|---|
    | `ANDROID_KEYSTORE_BASE64` | secret | contents of `keystore.b64` |
    | `ANDROID_KEYSTORE_PASSWORD` | secret | the keystore password |
-   | `ANDROID_KEY_ALIAS` | secret | `exercise-tracker` (the `-alias` above) |
+   | `ANDROID_KEY_ALIAS` | secret | `release-key` (the `-alias` above) |
    | `ANDROID_KEY_PASSWORD` | secret | the key password (with PKCS12 usually the keystore password) |
    | `ANDROID_CERT_SHA256` | **variable** (not a secret) | the fingerprint from step 2; `AB:CD:…` or plain hex |
    | `BUILD_NUMBER_OFFSET` | variable, optional | whole number ≥ 0, default 0 |
 
    CI checks that every APK is signed by exactly this certificate before publishing it.
+   Don't use an alias that appears in a release tag, title or APK name (e.g. `exercise-tracker`):
+   GitHub drops any job output containing a secret value, so the APK name would arrive empty and
+   the publish step would fail.
    `BUILD_NUMBER_OFFSET` is only needed if the workflow's run counter ever starts again (e.g. the
    workflow file is recreated): set it so that new build numbers are above the last published one.
 
