@@ -8,7 +8,7 @@ SQLite storage. Product plan: [`PLAN.md`](PLAN.md). Engineering rules (mandatory
 ## Setup
 
 ```bash
-nvm use            # Node 24 (see .nvmrc)
+nvm use            # Node 26 (see .nvmrc)
 npm install
 npm start          # scan the QR code with Expo Go on Android
 ```

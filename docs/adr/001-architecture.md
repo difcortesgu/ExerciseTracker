@@ -340,5 +340,5 @@ Events (first cross-module flow). The single exhaustive `switch` over node kinds
   or a new allowed edge) changes `boundary-policies.js` and its tests, and is visible in review.
 - New layers start with their thresholds switched on automatically. Nobody can quietly lower them.
 - One extra dev-only native module (`better-sqlite3`) is needed. It ships prebuilt binaries for
-  Node 24 on Linux, macOS and Windows.
+  Node 26 on Linux, macOS and Windows.
 - Open: cross-module domain access for `workout` (Sprint 3 ADR, options in ADR-002 decision 2).
