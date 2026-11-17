@@ -4,9 +4,47 @@ Maintained by the product-owner. Requirements come from `PLAN.md`. Stories and a
 
 ## In progress
 
+### Sprint 1 — Exercise library (`docs/sprints/sprint-1.md`)
+
+Status: planned (2026-11-16); the user answered Q1–Q6 the same day (archive on delete, duplicate as custom, default metrics table, on-demand images + "download all", own vocabulary values, names unique across all). Waiting for architect Phase 1.
+
+| ID | Story | Module | Owner |
+|---|---|---|---|
+| S1-01 | Normalise `-0` in unit value objects (Sprint 0 Q-1) | shared/domain | core-dev |
+| S1-02 | Logger contract, or a documented exception (Sprint 0 Q-3) | test/contracts, shared | architect |
+| S1-03 | Split `boundaries.test.ts` by concern | tooling | architect |
+| S1-04 | First module schema; migrations from the drizzle-kit bundle | exercises/infrastructure, shared/infrastructure | core-dev |
+| S1-05 | Tab bar icons | core/presentation | ui-dev |
+| S1-06 | Shared `Button` in the design system (B05-1) | shared/ui, updates/presentation | ui-dev |
+| S1-07 | `ErrorState` announces itself when shown inline | shared/ui | ui-dev |
+| S1-08 | Exercise entity and validation rules | exercises/domain | core-dev |
+| S1-09 | Search, filter and sort (case/accent-insensitive, combinable) | exercises/domain or application | core-dev |
+| S1-10 | Default tracked metrics for built-in exercises | exercises/domain | core-dev |
+| S1-11 | Pin, convert and bundle the free-exercise-db dataset (licence check) | tooling, assets | architect |
+| S1-12 | Idempotent, versioned seeding (never touches custom exercises) | exercises/application, infrastructure | core-dev |
+| S1-13 | Seed at startup without blocking it; failure + retry | exercises/application, core | core-dev + ui-dev |
+| S1-14 | Exercise repository (ports, SQLite adapter, contract suite) | exercises/application, infrastructure | core-dev |
+| S1-15 | Browse and find exercises (use cases) | exercises/application | core-dev |
+| S1-16 | Exercise library screen: list, search, filters, states | exercises/presentation, app | ui-dev |
+| S1-17 | Exercise detail with image gallery (root layout becomes a `Stack`) | exercises/presentation, app, core | ui-dev |
+| S1-18 | Built-in images: fetched once, cached, defined offline behaviour | exercises (application, infrastructure, presentation) | core-dev + ui-dev |
+| S1-19 | Create a custom exercise | exercises (all layers), app | core-dev + ui-dev |
+| S1-20 | Edit a custom exercise | exercises (all layers) | core-dev + ui-dev |
+| S1-21 | Delete a custom exercise (archive, Q1) | exercises (all layers) | core-dev + ui-dev |
+| S1-22 | Custom photos from camera or gallery, owned by the app | exercises (all layers) | core-dev + ui-dev |
+| S1-23 | Duplicate a built-in exercise as custom (Q2) | exercises/application, presentation | core-dev + ui-dev |
+| S1-24 | Data attribution in Settings | settings/presentation | ui-dev |
+| S1-25 | Maestro flow for the demo journey; first device run of the smoke flow (Q-5) | e2e | qa-engineer (+ ui-dev testIDs) |
+| S1-26 | On-device verification (Expo Go and release APK, update from 0.5), incl. pending S05-14 | tooling (manual) | qa-engineer |
+| S1-27 | ADR-004 Exercise library | docs | architect |
+| S1-28 | Download all built-in images for offline use (user-triggered, Q4) | exercises (application, infrastructure, presentation), settings/presentation | core-dev + ui-dev |
+| S1-29 | User-defined categories, muscles and equipment (Q5) | exercises (all layers) | core-dev + ui-dev |
+
+## Done
+
 ### Sprint 0.5 — Continuous delivery & self-update (`docs/sprints/sprint-0.5.md`)
 
-Status: planned, waiting for architect Phase 1. Module `updates` is a placeholder name until the architect decides where the feature lives (open question A1).
+Done and committed (commit `2555c38`, follow-ups `d85ed08` Node 26 toolchain and `b5b9eff` release key alias docs). The feature lives in the module `src/modules/updates/` (architect answer A1; it is no longer a placeholder name). The first real GitHub release run succeeded (user, 2026-11-16: a release APK was published). Still open: the on-device verification S05-14 (sprint-0.5 checklist steps 2–8), folded into Sprint 1 story S1-26; the assumed answers Q1–Q6 of Sprint 0.5 await user confirmation.
 
 | ID | Story | Module | Owner |
 |---|---|---|---|
@@ -20,12 +58,10 @@ Status: planned, waiting for architect Phase 1. Module `updates` is a placeholde
 | S05-08 | Startup update prompt "Build N available – Update / Later" | updates/presentation, core | ui-dev |
 | S05-09 | Download with progress, cancel, error and retry | updates (all layers) | core-dev + ui-dev |
 | S05-10 | Hand the APK to Android's system installer (user confirms) | updates (all layers) | core-dev + ui-dev |
-| S05-11 | Show the installed build in Settings (proposed, Q1) | settings/presentation, updates | ui-dev |
+| S05-11 | Show the installed build in Settings | settings/presentation, updates | ui-dev |
 | S05-12 | README: install, update, secrets, keystore loss | docs | architect |
 | S05-13 | ADR-003 Release builds and self-update | docs | architect |
-| S05-14 | On-device update verification | tooling (manual) | qa-engineer |
-
-## Done
+| S05-14 | On-device update verification | tooling (manual) | qa-engineer — **pending, folded into S1-26** |
 
 ### Sprint 0 — Foundations (`docs/sprints/sprint-0.md`)
 
@@ -64,21 +100,22 @@ Done per the main session (2026-11-13). Device checks still open from the Sprint
 
 ## Todo (epics, broken into stories at sprint planning)
 
-### Carry-over from Sprint 0 design review (do in Sprint 1)
-- ui-dev: tab icons via `npx expo install @expo/vector-icons` (test-first) — `src/core/presentation/app-tabs.tsx`
-- ui-dev: `accessibilityLiveRegion` announcement on `ErrorState` when first used inline — `src/shared/ui/error-state.tsx`
-- architect: split `tooling/eslint/boundaries.test.ts` (349 lines) by concern
-- core-dev: switch `APP_MIGRATIONS` to `migrationsFromDrizzleKit(generatedBundle)` when the first `*.schema.ts` lands — `src/shared/infrastructure/db/app-migrations.ts`
-- core-dev: Q-1 normalise `-0` to `0` in Weight/Duration/Distance factories (test-first) — `src/shared/domain/numbers.ts:12`
-- architect: Q-3 add a minimal Logger contract or document the exception in `test/fakes/README.md`
-- ui-dev: run the Maestro smoke flow on a device; add `testID` to `Screen` if labels aren't visible to Maestro (Q-5)
+### Carry-over from Sprint 0 design review
+Folded into Sprint 1 (2026-11-16): tab icons → S1-05; `ErrorState` live region → S1-07; split `boundaries.test.ts` → S1-03; `APP_MIGRATIONS` from the drizzle-kit bundle → S1-04; Q-1 `-0` normalisation → S1-01; Q-3 Logger contract → S1-02; Maestro device run / `testID` (Q-5) → S1-25.
 - architect (Sprint 3): decide where `flatten` lives / how `workout` reads the routine tree (options in ADR-001, preference in ADR-002)
 
+### Carry-over from Sprint 0.5
+- done (2026-11-16): first real release run on GitHub succeeded, a release APK was published
+- user (qa-engineer checklist): on-device verification S05-14 (sprint-0.5 checklist steps 2–8) → folded into S1-26
+- user: confirm or override the assumed answers Q1–Q6 in `docs/sprints/sprint-0.5.md`
+- done (2026-11-16, architect, Sprint 1 Phase 1): ADR-003 status records the successful first real release run (it was already Accepted; S05-14 still pending)
+- B05-1 promote `PromptButton` to `shared/ui` `Button` → folded into Sprint 1 as S1-06
+- B05-2 architect: measure the size of the reanimated/worklets native code in the APK; consider an autolinking exclude only after a device check
+- B05-3 core-dev: split `src/modules/updates/infrastructure/github-release-source.test.ts` (292 lines) by behaviour group, next time it changes
+- B05-4 done: `BACKLOG.md` no longer calls `updates` a placeholder (2026-11-16)
+
 ### E1 — Sprint 1: Exercise library (modules: exercises)
-- Seed built-in library from free-exercise-db (~800 exercises, muscles, equipment, instructions, images)
-- Browse / search / filter by muscle, equipment, category; exercise detail with image gallery
-- Create / edit / delete custom exercises: photos from camera/gallery, choose tracked metrics
-- Demo: find "Squat", view images; create your own exercise with a photo
+Broken into stories S1-01 to S1-29; see "In progress" and `docs/sprints/sprint-1.md`.
 
 ### E2 — Sprint 2: Routine builder (modules: routines)
 - Create / edit / duplicate / delete routines
@@ -111,6 +148,7 @@ Done per the main session (2026-11-13). Device checks still open from the Sprint
 ### E6 — Sprint 6: Polish & release prep (modules: settings, backup, all)
 - Settings: kg/lb, sound/voice/vibration toggles, default rest times, theme (dark mode)
 - JSON export/import backup (including custom images)
+- architect (from ADR-004): exclude `exercise-images/` (≈ 99 MB after a full image download) from Android Auto Backup, or disable Auto Backup in favour of the JSON backup — above 25 MB Android stops backing up the app entirely
 - Performance pass, accessibility, empty states, QA regression
 - Optional: development build / APK if background timing needs a foreground service
 - Demo: installable build, backup + restore
@@ -121,3 +159,4 @@ Done per the main session (2026-11-13). Device checks still open from the Sprint
 - **Over-the-air JS updates (EAS Update) and Play Store distribution:** not requested; would need an Expo account / Play Console. Revisit only if the user asks.
 - **More update triggers** (check on resume, scheduled check, manual "Check for updates" in Settings): out of scope for Sprint 0.5 (open question Q3 there).
 - **Remembering "Later" / skipping a build / mandatory updates:** out of scope for Sprint 0.5; "Later" applies to the current launch only.
+- **Exercise library extras** (out of scope for Sprint 1, see `docs/sprints/sprint-1.md`): restoring deleted exercises / undo; managing own vocabulary values (rename, merge, delete your own categories/muscles/equipment; Sprint 1 decision Q5); multiple equipment per exercise; more filters (level, force, custom only), favourites, sorting options; photo reordering and a full-screen image viewer; automatic/scheduled image downloads, Wi-Fi-only setting, clearing the image cache from the app (Sprint 1 decision Q4: bulk download is user-triggered only). Revisit if the user asks.

@@ -11,6 +11,10 @@
  * It mimics the documented behaviour the adapters rely on: `downloadFileAsync` streams into the
  * destination (a partial file stays behind on failure, as on Android), rejects with `AbortError`
  * when its signal aborts, and refuses an existing destination unless `idempotent` is set.
+ * Sprint 1 adds the persistent `Paths.document`, `File.move` / `moveSync` (refuse a missing source or an
+ * existing destination unless `overwrite`, and update the moved file's `uri`), intermediate
+ * directories, `File.parentDirectory` and `Directory.list` (direct children; rejects a missing directory), plus switches
+ * that make moves and listings fail (storage full, I/O error).
  * Call `memoryFileSystem.reset()` in `beforeEach`.
  */
 
@@ -40,6 +44,8 @@ class InMemoryFileSystem {
   behaviour: ServerBehaviour = DEFAULT_BEHAVIOUR;
   downloads: RecordedDownload[] = [];
   failingDeletes = false;
+  failingMoves = false;
+  failingLists = false;
 
   reset(): void {
     this.files.clear();
@@ -47,6 +53,8 @@ class InMemoryFileSystem {
     this.behaviour = DEFAULT_BEHAVIOUR;
     this.downloads = [];
     this.failingDeletes = false;
+    this.failingMoves = false;
+    this.failingLists = false;
   }
 }
 
@@ -65,6 +73,28 @@ function abortError(): Error {
   return Object.assign(new Error('The download was aborted.'), { name: 'AbortError' });
 }
 
+interface DirectoryCreateOptionsLike {
+  readonly intermediates?: boolean;
+  readonly idempotent?: boolean;
+}
+
+interface RelocationOptionsLike {
+  readonly overwrite?: boolean;
+}
+
+function parentUri(uri: string): string {
+  return uri.slice(0, uri.lastIndexOf('/'));
+}
+
+/** Every ancestor directory URI below `file://` (for `create({ intermediates: true })`). */
+function ancestorUris(uri: string): readonly string[] {
+  const ancestors: string[] = [];
+  for (let parent = parentUri(uri); parent.length > 'file://'.length; parent = parentUri(parent)) {
+    ancestors.push(parent);
+  }
+  return ancestors;
+}
+
 export class Directory {
   readonly uri: string;
 
@@ -76,20 +106,42 @@ export class Directory {
     return memoryFileSystem.directories.has(this.uri);
   }
 
-  create(): void {
+  create(options: DirectoryCreateOptionsLike = {}): void {
+    if (options.intermediates === true) {
+      ancestorUris(this.uri).forEach((ancestor) => memoryFileSystem.directories.add(ancestor));
+    }
     memoryFileSystem.directories.add(this.uri);
+  }
+
+  list(): (Directory | File)[] {
+    if (!this.exists || memoryFileSystem.failingLists) {
+      throw new Error(`Cannot list ${this.uri}.`);
+    }
+    const isChild = (uri: string): boolean => parentUri(uri) === this.uri;
+    const directories = [...memoryFileSystem.directories].filter(isChild).sort();
+    const files = [...memoryFileSystem.files.keys()].filter(isChild).sort();
+    return [...directories.map((uri) => new Directory(uri)), ...files.map((uri) => new File(uri))];
   }
 }
 
 export class File {
-  readonly uri: string;
+  private currentUri: string;
 
   constructor(...parts: PathPart[]) {
-    this.uri = joinUri(parts);
+    this.currentUri = joinUri(parts);
+  }
+
+  /** Like the native module, the URI follows the file when it is moved. */
+  get uri(): string {
+    return this.currentUri;
   }
 
   get exists(): boolean {
     return memoryFileSystem.files.has(this.uri);
+  }
+
+  get parentDirectory(): Directory {
+    return new Directory(parentUri(this.uri));
   }
 
   get size(): number {
@@ -108,6 +160,26 @@ export class File {
       throw new Error(`Cannot delete ${this.uri}.`);
     }
     memoryFileSystem.files.delete(this.uri);
+  }
+
+  move(destination: File, options: RelocationOptionsLike = {}): Promise<void> {
+    try {
+      this.moveSync(destination, options);
+      return Promise.resolve();
+    } catch (cause) {
+      return Promise.reject(cause);
+    }
+  }
+
+  moveSync(destination: File, options: RelocationOptionsLike = {}): void {
+    const size = memoryFileSystem.files.get(this.uri);
+    const blocked = destination.exists && options.overwrite !== true;
+    if (size === undefined || blocked || memoryFileSystem.failingMoves) {
+      throw new Error(`Cannot move ${this.uri} to ${destination.uri}.`);
+    }
+    memoryFileSystem.files.delete(this.uri);
+    memoryFileSystem.files.set(destination.uri, size);
+    this.currentUri = destination.uri;
   }
 
   static async downloadFileAsync(
@@ -155,5 +227,8 @@ function streamInto(
 export const Paths = {
   get cache(): Directory {
     return new Directory('file:///data/cache');
+  },
+  get document(): Directory {
+    return new Directory('file:///data/files');
   },
 };

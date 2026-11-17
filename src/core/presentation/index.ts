@@ -2,6 +2,7 @@
 export { AppBootstrapGate, type AppBootstrapGateProps } from './app-bootstrap-gate';
 export { AppErrorBoundary } from './app-error-boundary';
 export { AppShell, type AppShellProps } from './app-shell';
+export { AppStack } from './app-stack';
 export { AppTabs } from './app-tabs';
 export {
   DependencyProvider,

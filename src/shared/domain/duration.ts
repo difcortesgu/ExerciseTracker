@@ -1,6 +1,6 @@
 import type { Brand } from './brand';
 import { domainError, type DomainError } from './domain-error';
-import { approximatelyEqual, isNonNegativeFinite } from './numbers';
+import { approximatelyEqual, isNonNegativeFinite, withoutNegativeZero } from './numbers';
 import { err, ok, type Result } from './result';
 
 /**
@@ -21,7 +21,7 @@ function fromCanonical(
   milliseconds: number,
   enteredValue: number,
 ): Result<Duration, InvalidDurationError> {
-  const candidate = Object.freeze({ milliseconds });
+  const candidate = Object.freeze({ milliseconds: withoutNegativeZero(milliseconds) });
   return isDuration(candidate)
     ? ok(candidate)
     : err(

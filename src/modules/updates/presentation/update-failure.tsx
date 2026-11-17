@@ -1,9 +1,8 @@
 import type { ReactElement } from 'react';
 
-import { ErrorState } from '@shared/ui';
+import { Button, ErrorState } from '@shared/ui';
 
 import { PromptActions } from './prompt-actions';
-import { PromptButton } from './prompt-button';
 
 export interface UpdateFailureProps {
   readonly title: string;
@@ -23,8 +22,8 @@ export function UpdateFailure({
     <>
       <ErrorState title={title} message={message} />
       <PromptActions>
-        <PromptButton label="Retry" onPress={onRetry} />
-        <PromptButton label="Close" variant="secondary" onPress={onClose} />
+        <Button label="Retry" onPress={onRetry} />
+        <Button label="Close" variant="secondary" onPress={onClose} />
       </PromptActions>
     </>
   );

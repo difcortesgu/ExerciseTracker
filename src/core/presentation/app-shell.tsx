@@ -9,7 +9,7 @@ import { DependencyProvider } from './dependency-provider';
 export interface AppShellProps {
   /** The composition-root container (tests pass one registered with fakes). */
   readonly resolver: Resolver;
-  /** The routes (expo-router's `<Slot />`). */
+  /** The routes (the root navigator, `AppStack`). */
   readonly children: ReactNode;
   /**
    * Rendered next to the routes, and like them **only after a successful startup**: never over the

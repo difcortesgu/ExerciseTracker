@@ -129,3 +129,30 @@ describe('Duration', () => {
     });
   });
 });
+
+describe('Duration and negative zero (S1-01)', () => {
+  it('reads durationFromSeconds(-0) and durationFromMilliseconds(-0) back as 0, never -0', () => {
+    for (const duration of [
+      unwrap(durationFromSeconds(-0)),
+      unwrap(durationFromMilliseconds(-0)),
+    ]) {
+      expect(Object.is(toSeconds(duration), 0)).toBe(true);
+      expect(Object.is(toMilliseconds(duration), 0)).toBe(true);
+    }
+  });
+
+  it('never reads back -0 for any non-negative input', () => {
+    const nonNegative = fc.oneof(
+      fc.constant(-0),
+      fc.double({ min: 0, max: MAX_REALISTIC_SECONDS, noNaN: true }),
+    );
+    fc.assert(
+      fc.property(nonNegative, (value) => {
+        const duration = unwrap(durationFromSeconds(value));
+
+        expect(Object.is(toSeconds(duration), -0)).toBe(false);
+        expect(Object.is(toMilliseconds(duration), -0)).toBe(false);
+      }),
+    );
+  });
+});

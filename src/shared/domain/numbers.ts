@@ -21,3 +21,11 @@ export function approximatelyEqual(a: number, b: number): boolean {
   const scale = Math.max(TOLERANCE_SCALE_FLOOR, Math.abs(a), Math.abs(b));
   return Math.abs(a - b) <= RELATIVE_EQUALITY_TOLERANCE * scale;
 }
+
+/**
+ * The same number, with `-0` turned into `0` (S1-01): `-0 + 0` is `0` and `x + 0` is `x` for every
+ * other number, so value objects never store or read back a negative zero.
+ */
+export function withoutNegativeZero(value: number): number {
+  return value + 0;
+}

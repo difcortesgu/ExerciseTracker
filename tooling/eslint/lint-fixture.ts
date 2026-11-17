@@ -46,3 +46,12 @@ export function createFixtureLinter(): FixtureLinter {
 
 export const ruleIdsOf = (errors: readonly LintError[]): readonly (string | null)[] =>
   errors.map((error) => error.ruleId);
+
+/** Rule id of eslint-plugin-boundaries' layer and module policy. */
+export const BOUNDARIES = 'boundaries/dependencies';
+/** Rule id of the per-layer external package restrictions. */
+export const RESTRICTED_IMPORT = 'no-restricted-imports';
+
+/** Source of a virtual file that imports `specifier` and uses it (so no unused-import noise). */
+export const importing = (specifier: string): string =>
+  `import * as target from '${specifier}';\n\nexport const used = target;\n`;

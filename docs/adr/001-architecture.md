@@ -25,6 +25,9 @@ place, and why.
 - *Amended by ADR-003 (Sprint 0.5):* `expo-application`, `expo-file-system` and
   `expo-intent-launcher` were added for the self-updater. All three are part of Expo Go, so the
   "no development build" rule still holds.
+- *Amended by ADR-004 (Sprint 1):* `expo-image`, `expo-image-picker`, `expo-image-manipulator`,
+  `@expo/vector-icons` and its peers `expo-font` / `expo-asset` were added for the exercise
+  library. All are part of Expo Go.
 - `react-dom` is pinned to the React version only because npm otherwise fails to resolve
   expo-router's *optional* web peers. It is never bundled for Android.
 - The template's reanimated, gesture-handler, worklets and web packages were removed as
@@ -135,7 +138,8 @@ targets.
 - The ESLint config is built by a factory (`tooling/eslint/create-eslint-config.js`). The
   architecture lives as data in `tooling/eslint/boundary-policies.js`, and layer globs are shared
   with the coverage policy in `tooling/layers.js`.
-- **Proof:** `tooling/eslint/boundaries.test.ts` and `code-quality.test.ts` lint virtual files at
+- **Proof:** `tooling/eslint/boundaries-*.test.ts` (split by concern in Sprint 1, S1-03: layers,
+  external packages, modules, test files) and `code-quality.test.ts` lint virtual files at
   chosen paths of a fixture project (`tooling/eslint/__fixtures__/project`) with the real factory,
   and assert which rules fire (and which don't). There are 140+ cases, including domain →
   infrastructure, presentation → infrastructure, cross-module internals, cycles, `app/` →
@@ -179,6 +183,10 @@ tsconfig.
     created in `test/` or `*.test.ts`.
 - Test data builders go in `test/builders`, port fakes in `test/fakes`, contract suites in
   `test/contracts` (READMEs there describe the conventions).
+- *Amended in Sprint 1 (S1-02):* the `Logger` port has a minimal contract suite
+  (`test/contracts/logger.contract.ts`: logging is total, it never throws, whatever the level or
+  context), run against `RecordingLogger` and `ConsoleLogger` (with `console` stubbed), so the
+  "every fake passes its contract" rule has no exception.
 - A contract suite has to **export** the function that registers its cases, because the test file
   of every implementation imports it. So `jest/no-export` is switched off for `test/contracts/**`
   only, in the lint config (`CONTRACT_SUITE_FILES`, proven in `code-quality.test.ts`). Ordinary test

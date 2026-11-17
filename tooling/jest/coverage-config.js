@@ -8,7 +8,11 @@ const path = require('node:path');
 
 const micromatch = require('micromatch');
 
-const { COVERAGE_POLICY, RELEASE_TOOLING_GLOB } = require('./coverage-policy');
+const {
+  COVERAGE_POLICY,
+  EXERCISE_DB_TOOLING_GLOB,
+  RELEASE_TOOLING_GLOB,
+} = require('./coverage-policy');
 const { selectApplicableThresholds } = require('./coverage-thresholds');
 
 /**
@@ -18,10 +22,12 @@ const { selectApplicableThresholds } = require('./coverage-thresholds');
  * - module index.ts barrels: re-exports only, enforced by the `no-restricted-syntax` lint rule
  *   for src/modules/*\/index.ts, so they cannot hide logic;
  * - generated drizzle-kit migration files (SQL, journal and generated index), never hand-written;
- * - the release CLI process entry point (`tooling/release/release-cli.js`): two lines that hand
- *   `process` to the tested `run()`; it is exercised end to end by a spawned-process test, whose
- *   coverage Jest cannot collect.
+ * - the CLI process entry points (`tooling/release/release-cli.js`,
+ *   `tooling/exercise-db/exercise-db-cli.js`): a few lines that hand `process` to the tested
+ *   `run()`; each is exercised end to end by a spawned-process test, whose coverage Jest cannot
+ *   collect.
  * The CI release scripts under tooling/release are measured (ADR-003): they decide what is published.
+ * The dataset conversion under tooling/exercise-db is measured (ADR-004): it decides what is seeded.
  * app/ routes are thin wiring outside src/ and are not measured; logic lives in presentation layers.
  * test/ (fakes, builders, contracts) is test support and is never production coverage.
  */
@@ -33,10 +39,16 @@ const COLLECT_COVERAGE_FROM = Object.freeze([
   '!src/shared/infrastructure/db/migrations/**',
   RELEASE_TOOLING_GLOB,
   '!tooling/release/release-cli.js',
+  EXERCISE_DB_TOOLING_GLOB,
+  '!tooling/exercise-db/exercise-db-cli.js',
 ]);
 
 /** Folders that can contain measured files (narrows the file scan below). */
-const MEASURED_ROOTS = Object.freeze(['src/**/*', 'tooling/release/**/*']);
+const MEASURED_ROOTS = Object.freeze([
+  'src/**/*',
+  'tooling/release/**/*',
+  'tooling/exercise-db/**/*',
+]);
 
 /**
  * @param {string} rootDir project root

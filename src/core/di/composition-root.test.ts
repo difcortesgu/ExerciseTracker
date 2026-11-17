@@ -40,6 +40,17 @@ jest.mock('expo-file-system', () =>
   ),
 );
 jest.mock('expo-intent-launcher', () => ({ startActivityAsync: jest.fn() }));
+// The exercises photo adapters import these at module load (exercises wiring: its own tests).
+jest.mock('expo-image-picker', () =>
+  jest.requireActual<typeof import('@test/support/in-memory-image-picker')>(
+    '@test/support/in-memory-image-picker',
+  ),
+);
+jest.mock('expo-image-manipulator', () =>
+  jest.requireActual<typeof import('@test/support/in-memory-image-manipulator')>(
+    '@test/support/in-memory-image-manipulator',
+  ),
+);
 
 describe('createProductionContainer', () => {
   let consoleError: jest.SpyInstance;

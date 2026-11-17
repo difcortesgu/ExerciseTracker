@@ -1,6 +1,6 @@
 import type { Brand } from './brand';
 import { domainError, type DomainError } from './domain-error';
-import { approximatelyEqual, isNonNegativeFinite } from './numbers';
+import { approximatelyEqual, isNonNegativeFinite, withoutNegativeZero } from './numbers';
 import { err, ok, type Result } from './result';
 
 /**
@@ -27,7 +27,9 @@ function isWeight(candidate: { readonly kilograms: number }): candidate is Weigh
 }
 
 export function createWeight(value: number, unit: WeightUnit): Result<Weight, InvalidWeightError> {
-  const candidate = Object.freeze({ kilograms: value * KILOGRAMS_PER_UNIT[unit] });
+  const candidate = Object.freeze({
+    kilograms: withoutNegativeZero(value * KILOGRAMS_PER_UNIT[unit]),
+  });
   return isWeight(candidate)
     ? ok(candidate)
     : err(

@@ -15,6 +15,12 @@ const { LAYER_GLOBS } = require('../layers');
  */
 const RELEASE_TOOLING_GLOB = 'tooling/release/**/*.js';
 
+/**
+ * Exercise dataset conversion (Sprint 1, S1-11, ADR-004): validates the pinned free-exercise-db
+ * and writes the seed every install receives, so it is held to the domain standard (100%).
+ */
+const EXERCISE_DB_TOOLING_GLOB = 'tooling/exercise-db/**/*.js';
+
 /** @param {number} lines @param {number} branches @param {number} functions @param {number} statements */
 const threshold = (lines, branches, functions, statements) => ({
   lines,
@@ -32,6 +38,7 @@ const COVERAGE_POLICY = Object.freeze({
   [LAYER_GLOBS.presentation]: threshold(85, 85, 85, 85),
   [LAYER_GLOBS.core]: threshold(90, 90, 90, 90),
   [RELEASE_TOOLING_GLOB]: threshold(100, 100, 100, 100),
+  [EXERCISE_DB_TOOLING_GLOB]: threshold(100, 100, 100, 100),
 });
 
-module.exports = { COVERAGE_POLICY, LAYER_GLOBS, RELEASE_TOOLING_GLOB };
+module.exports = { COVERAGE_POLICY, EXERCISE_DB_TOOLING_GLOB, LAYER_GLOBS, RELEASE_TOOLING_GLOB };

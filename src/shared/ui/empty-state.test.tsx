@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { useColorScheme } from 'react-native';
 
 import { EmptyState } from './empty-state';
@@ -34,5 +34,22 @@ describe('EmptyState', () => {
     expect(screen.getByText('No routines yet.')).toHaveStyle({
       color: darkTheme.colors.textMuted,
     });
+  });
+
+  it('offers no action unless one is given', async () => {
+    await render(<EmptyState message="No exercises match." />);
+
+    expect(screen.queryByRole('button')).not.toBeOnTheScreen();
+  });
+
+  it('offers an action that helps the user out of the empty state', async () => {
+    const onPress = jest.fn();
+    await render(
+      <EmptyState message="No exercises match." action={{ label: 'Clear filters', onPress }} />,
+    );
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Clear filters' }));
+
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

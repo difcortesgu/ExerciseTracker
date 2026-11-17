@@ -1,4 +1,21 @@
+import { describeLoggerContract } from '@test/contracts/logger.contract';
+
 import { ConsoleLogger } from './console-logger';
+
+/** The contract runs with `console` stubbed at the boundary, so the suite prints nothing. */
+describe('ConsoleLogger with console stubbed', () => {
+  beforeEach(() => {
+    for (const method of ['info', 'warn', 'error'] as const) {
+      jest.spyOn(console, method).mockImplementation(() => undefined);
+    }
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  describeLoggerContract('ConsoleLogger', () => new ConsoleLogger());
+});
 
 describe('ConsoleLogger', () => {
   afterEach(() => {

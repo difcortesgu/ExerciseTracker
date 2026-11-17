@@ -9,6 +9,7 @@ Conventions:
 - A fake implements the port interface from the application layer (`implements Clock`), nothing more.
   Test-only helpers (e.g. `advanceBy(duration)`) are allowed but must not change the port contract.
 - **Every fake must pass the port's contract suite in `test/contracts/`** (Liskov). A fake without a
-  contract suite run is not done.
+  contract suite run is not done. This includes `RecordingLogger` (`logger.contract.ts`, S1-02):
+  ports without a read side still have a contract (for `Logger`: logging never throws).
 - No real time, randomness, network or file system.
 - Fakes are written test-first like any other code.

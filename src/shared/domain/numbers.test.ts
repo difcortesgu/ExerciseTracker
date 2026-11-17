@@ -1,6 +1,11 @@
 import * as fc from 'fast-check';
 
-import { approximatelyEqual, isNonNegativeFinite, RELATIVE_EQUALITY_TOLERANCE } from './numbers';
+import {
+  approximatelyEqual,
+  isNonNegativeFinite,
+  RELATIVE_EQUALITY_TOLERANCE,
+  withoutNegativeZero,
+} from './numbers';
 
 describe('isNonNegativeFinite', () => {
   it.each([0, 0.5, 1, 1e300])('accepts %p', (value) => {
@@ -41,6 +46,21 @@ describe('approximatelyEqual', () => {
       fc.property(fc.double({ noNaN: true, noDefaultInfinity: true }), fc.double(), (a, b) => {
         expect(approximatelyEqual(a, a)).toBe(true);
         expect(approximatelyEqual(a, b)).toBe(approximatelyEqual(b, a));
+      }),
+    );
+  });
+});
+
+describe('withoutNegativeZero', () => {
+  it('turns -0 into 0', () => {
+    expect(Object.is(withoutNegativeZero(-0), 0)).toBe(true);
+  });
+
+  it('leaves every other number unchanged', () => {
+    fc.assert(
+      fc.property(fc.double({ noNaN: true }), (value) => {
+        fc.pre(!Object.is(value, -0));
+        expect(Object.is(withoutNegativeZero(value), value)).toBe(true);
       }),
     );
   });

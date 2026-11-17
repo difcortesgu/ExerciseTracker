@@ -40,6 +40,7 @@ import { ConsoleLogger } from '@shared/infrastructure/logging/console-logger';
 import { SystemClock } from '@shared/infrastructure/time/system-clock';
 
 import { createContainer, type Container } from './container';
+import { exercisesStartupTasks, registerExercises } from './exercises-registrations';
 
 /** The on-device SQLite file. Changing it would orphan existing user data. */
 export const DATABASE_FILE_NAME = 'exercise-tracker.db';
@@ -50,8 +51,13 @@ export const DATABASE_FILE_NAME = 'exercise-tracker.db';
  * database) is opened before the bootstrapper needs it. Call once, in `app/_layout.tsx`.
  */
 export function createProductionContainer(): Container {
+  return registerExercises(registerCoreAndUpdates(createContainer()));
+}
+
+/** Shared kernel adapters, startup, and the self-update module (Sprint 0 / 0.5). */
+function registerCoreAndUpdates(container: Container): Container {
   return (
-    createContainer()
+    container
       .register(ClockToken, () => new SystemClock())
       .register(IdGeneratorToken, () => new CryptoIdGenerator())
       .register(LoggerToken, () => new ConsoleLogger())
@@ -64,10 +70,12 @@ export function createProductionContainer(): Container {
             migrations: APP_MIGRATIONS,
           }),
       )
+      // Startup tasks resolve their use cases only when they run, after a successful startup.
       .register(BootstrapperToken, (resolver) =>
         createBootstrapper({
           migrator: resolver.resolve(DatabaseMigratorToken),
           logger: resolver.resolve(LoggerToken),
+          startupTasks: exercisesStartupTasks(resolver),
         }),
       )
       .register(InstalledAppInfoToken, (resolver) =>

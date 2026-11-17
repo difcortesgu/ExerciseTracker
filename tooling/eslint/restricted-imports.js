@@ -26,6 +26,8 @@ const DEVICE_SERVICE_PACKAGES = [
   'expo-application',
   'expo-constants',
   'expo-intent-launcher',
+  // Custom exercise photos (Sprint 1, ADR-004): downscaling happens in the photo store adapter.
+  'expo-image-manipulator',
 ];
 
 const FRAMEWORK_PACKAGES = [
@@ -42,8 +44,19 @@ const FRAMEWORK_PACKAGES = [
   'node:*',
 ];
 
+/**
+ * The bundled free-exercise-db seed (Sprint 1, ADR-004) is read only by the seed source adapter in
+ * infrastructure; everything else gets its content through the `ExerciseSeedSource` port.
+ */
+const seedAssetRestriction = {
+  group: ['@assets/exercise-db/*', '**/assets/exercise-db/*'],
+  message:
+    'the bundled exercise dataset is read only by the seed source adapter (infrastructure); use the exercises use cases or ports instead (ADR-004).',
+};
+
 const forbiddenImportsInInnerLayers = {
   patterns: [
+    seedAssetRestriction,
     {
       group: [...FRAMEWORK_PACKAGES, ...DATABASE_PACKAGES],
       message:
@@ -54,6 +67,7 @@ const forbiddenImportsInInnerLayers = {
 
 const forbiddenImportsInPresentation = {
   patterns: [
+    seedAssetRestriction,
     {
       group: [...DATABASE_PACKAGES, ...DEVICE_SERVICE_PACKAGES],
       message:

@@ -1,9 +1,8 @@
 import type { ReactElement } from 'react';
 
-import { Heading } from '@shared/ui';
+import { Button, Heading } from '@shared/ui';
 
 import { PromptActions } from './prompt-actions';
-import { PromptButton } from './prompt-button';
 
 export interface UpdateOfferProps {
   /** E.g. "Build 42 available (35 MB)". */
@@ -18,8 +17,8 @@ export function UpdateOffer({ title, onUpdate, onLater }: UpdateOfferProps): Rea
     <>
       <Heading>{title}</Heading>
       <PromptActions>
-        <PromptButton label="Update" onPress={onUpdate} />
-        <PromptButton label="Later" variant="secondary" onPress={onLater} />
+        <Button label="Update" onPress={onUpdate} />
+        <Button label="Later" variant="secondary" onPress={onLater} />
       </PromptActions>
     </>
   );

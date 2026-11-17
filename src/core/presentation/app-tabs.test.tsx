@@ -1,4 +1,5 @@
-import { Text } from 'react-native';
+import { isHiddenFromAccessibility, within } from '@testing-library/react-native';
+import { StyleSheet, Text } from 'react-native';
 import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 
 import { lightTheme } from '@shared/ui';
@@ -60,4 +61,60 @@ describe('AppTabs', () => {
 
     expect(await screen.findByText(`${tabName} content`)).toBeOnTheScreen();
   });
+
+  describe('icons (S1-05)', () => {
+    it.each(TAB_NAMES)('shows an icon in the %s tab', async (tabName) => {
+      await renderTabs();
+
+      expect(shownIcon(tabName)).toBeOnTheScreen();
+    });
+
+    it('keeps the icon out of the screen reader, so a tab is announced by its name only', async () => {
+      await renderTabs();
+
+      expect(isHiddenFromAccessibility(shownIcon('Exercises'))).toBe(true);
+      expect(screen.getByLabelText('Exercises')).toBeOnTheScreen();
+    });
+
+    it('colours the selected tab icon with the active token and the others with the inactive token', async () => {
+      await renderTabs();
+
+      expect(shownIcon('Workout')).toHaveStyle({ color: lightTheme.colors.accent });
+      expect(shownIcon('Settings')).toHaveStyle({ color: lightTheme.colors.textMuted });
+    });
+
+    it('moves the active colour to the tab the user selects', async () => {
+      await renderTabs();
+
+      await fireEvent.press(screen.getByLabelText('Exercises'));
+
+      expect(await screen.findByText('Exercises content')).toBeOnTheScreen();
+      expect(shownIcon('Exercises')).toHaveStyle({ color: lightTheme.colors.accent });
+      expect(shownIcon('Workout')).toHaveStyle({ color: lightTheme.colors.textMuted });
+    });
+  });
 });
+
+type HostElement = ReturnType<typeof screen.getByLabelText>;
+
+function isFadedOut(element: HostElement | null): boolean {
+  if (element === null) {
+    return false;
+  }
+  return StyleSheet.flatten(element.props.style)?.opacity === 0 || isFadedOut(element.parent);
+}
+
+/**
+ * The tab bar draws a selected and an unselected icon on top of each other and fades one of them
+ * out; this returns the one the user sees.
+ */
+function shownIcon(tabName: string): HostElement {
+  const icons = within(screen.getByLabelText(tabName)).getAllByTestId(`tab-icon-${tabName}`, {
+    includeHiddenElements: true,
+  });
+  const [shown, ...others] = icons.filter((icon) => !isFadedOut(icon));
+  if (shown === undefined || others.length > 0) {
+    throw new Error(`Expected exactly one visible icon in the ${tabName} tab.`);
+  }
+  return shown;
+}

@@ -95,3 +95,27 @@ describe('Distance', () => {
     });
   });
 });
+
+describe('Distance and negative zero (S1-01)', () => {
+  it.each(UNITS)('reads createDistance(-0, %s) back as 0 in every unit, never -0', (unit) => {
+    const value = distance(-0, unit);
+
+    UNITS.forEach((readUnit) => expect(Object.is(distanceIn(value, readUnit), 0)).toBe(true));
+  });
+
+  it('never reads back -0 for any non-negative input in any unit', () => {
+    const nonNegative = fc.oneof(
+      fc.constant(-0),
+      fc.double({ min: 0, max: MAX_REALISTIC_METRES, noNaN: true }),
+    );
+    fc.assert(
+      fc.property(nonNegative, fc.constantFrom(...UNITS), (value, unit) => {
+        const created = distance(value, unit);
+
+        UNITS.forEach((readUnit) =>
+          expect(Object.is(distanceIn(created, readUnit), -0)).toBe(false),
+        );
+      }),
+    );
+  });
+});

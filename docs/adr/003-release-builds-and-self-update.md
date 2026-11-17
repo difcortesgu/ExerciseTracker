@@ -1,8 +1,10 @@
 # ADR-003: Release builds and self-update
 
 - **Status:** Accepted (Sprint 0.5 close-out, architect, after the Phase 2 design review and the
-  Phase 3 QA report). Still to be confirmed in practice: the first real release run on GitHub and
-  the on-device check S05-14; findings from them amend this ADR.
+  Phase 3 QA report). Confirmed in practice on 2026-11-16: the first real release run on GitHub
+  succeeded and published a release APK (user report, recorded by the architect in Sprint 1
+  Phase 1). Still to be confirmed: the on-device check S05-14 (folded into Sprint 1 S1-26);
+  findings from it amend this ADR.
 - **Date:** 2026-11-14
 - **Deciders:** architect; user decisions of 2026-11-13 (`docs/sprints/sprint-0.5.md` "Decisions")
 - **Amends:** ADR-001 §1 (dependencies; transitive reanimated/worklets clarified), §2 (restricted
@@ -227,4 +229,5 @@ x86 emulator ABIs, which keeps it smaller and the build faster. Emulators use Ex
   commit after the running one.
 - Native code of `react-native-reanimated` and `react-native-worklets` (transitive, autolinked)
   is in the APK although the app doesn't use it; accepted (ADR-001 §1), size check in the backlog.
-- Not verified yet: a real GitHub Actions release run, and the on-device install-over (S05-14).
+- Verified on 2026-11-16: a real GitHub Actions release run published a release APK. Not verified
+  yet: the on-device install-over (S05-14, part of Sprint 1 S1-26).

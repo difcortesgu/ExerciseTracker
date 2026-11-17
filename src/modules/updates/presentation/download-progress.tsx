@@ -1,12 +1,10 @@
 import type { ReactElement } from 'react';
 import { View } from 'react-native';
 
-import { BodyText, Heading, useTheme } from '@shared/ui';
+import { BodyText, Button, Heading, ProgressBar, useTheme } from '@shared/ui';
 
 import { PromptActions } from './prompt-actions';
-import { PromptButton } from './prompt-button';
 
-const PROGRESS_BAR_HEIGHT = 16;
 const PERCENT_MAX = 100;
 
 export interface DownloadProgressViewProps {
@@ -26,36 +24,23 @@ export function DownloadProgressView({
   amountText,
   onCancel,
 }: DownloadProgressViewProps): ReactElement {
-  const { colors, spacing } = useTheme();
+  const { spacing } = useTheme();
 
   return (
     <>
       <Heading>{title}</Heading>
-      <View
-        accessible
-        accessibilityRole="progressbar"
-        accessibilityLabel={`Download progress ${percent}%`}
-        accessibilityValue={{ min: 0, max: PERCENT_MAX, now: percent }}
-        style={{
-          height: PROGRESS_BAR_HEIGHT,
-          borderRadius: PROGRESS_BAR_HEIGHT / 2,
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-          borderWidth: 1,
-          overflow: 'hidden',
-        }}
-      >
-        <View
-          testID="download-progress-fill"
-          style={{ width: `${percent}%`, height: '100%', backgroundColor: colors.accent }}
-        />
-      </View>
+      <ProgressBar
+        label={`Download progress ${percent}%`}
+        value={percent}
+        max={PERCENT_MAX}
+        fillTestID="download-progress-fill"
+      />
       <View style={{ gap: spacing.small }}>
         <BodyText>{`${percent}%`}</BodyText>
         <BodyText tone="textMuted">{amountText}</BodyText>
       </View>
       <PromptActions>
-        <PromptButton label="Cancel download" variant="secondary" onPress={onCancel} />
+        <Button label="Cancel download" variant="secondary" onPress={onCancel} />
       </PromptActions>
     </>
   );

@@ -1,10 +1,9 @@
 import type { ReactElement } from 'react';
 import { View } from 'react-native';
 
-import { BodyText, Heading, useTheme } from '@shared/ui';
+import { BodyText, Button, Heading, useTheme } from '@shared/ui';
 
 import { PromptActions } from './prompt-actions';
-import { PromptButton } from './prompt-button';
 
 const INSTALL_NOTE_TITLE = 'Install the update';
 const INSTALL_NOTE_MESSAGE =
@@ -30,8 +29,8 @@ export function InstallNote({ onContinue, onCancel }: InstallNoteProps): ReactEl
         <BodyText>{INSTALL_NOTE_MESSAGE}</BodyText>
       </View>
       <PromptActions>
-        <PromptButton label="Open installer" onPress={onContinue} />
-        <PromptButton label="Not now" variant="secondary" onPress={onCancel} />
+        <Button label="Open installer" onPress={onContinue} />
+        <Button label="Not now" variant="secondary" onPress={onCancel} />
       </PromptActions>
     </>
   );

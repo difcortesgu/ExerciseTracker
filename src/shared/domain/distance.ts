@@ -1,6 +1,6 @@
 import type { Brand } from './brand';
 import { domainError, type DomainError } from './domain-error';
-import { approximatelyEqual, isNonNegativeFinite } from './numbers';
+import { approximatelyEqual, isNonNegativeFinite, withoutNegativeZero } from './numbers';
 import { err, ok, type Result } from './result';
 
 /**
@@ -33,7 +33,7 @@ export function createDistance(
   value: number,
   unit: DistanceUnit,
 ): Result<Distance, InvalidDistanceError> {
-  const candidate = Object.freeze({ metres: value * METRES_PER_UNIT[unit] });
+  const candidate = Object.freeze({ metres: withoutNegativeZero(value * METRES_PER_UNIT[unit]) });
   return isDistance(candidate)
     ? ok(candidate)
     : err(

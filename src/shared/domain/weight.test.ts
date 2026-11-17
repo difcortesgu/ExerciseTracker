@@ -81,3 +81,28 @@ describe('Weight', () => {
     });
   });
 });
+
+describe('Weight and negative zero (S1-01)', () => {
+  const nonNegative = fc.oneof(
+    fc.constant(-0),
+    fc.double({ min: 0, max: MAX_REALISTIC_KILOGRAMS, noNaN: true }),
+  );
+
+  it.each(['kg', 'lb'] as const)('reads createWeight(-0, %s) back as 0, never -0', (unit) => {
+    const weight = unwrap(createWeight(-0, unit));
+
+    expect(Object.is(weightIn(weight, 'kg'), 0)).toBe(true);
+    expect(Object.is(weightIn(weight, 'lb'), 0)).toBe(true);
+  });
+
+  it('never reads back -0 for any non-negative input in any unit', () => {
+    fc.assert(
+      fc.property(nonNegative, fc.constantFrom('kg', 'lb' as const), (value, unit) => {
+        const weight = unwrap(createWeight(value, unit));
+
+        expect(Object.is(weightIn(weight, 'kg'), -0)).toBe(false);
+        expect(Object.is(weightIn(weight, 'lb'), -0)).toBe(false);
+      }),
+    );
+  });
+});

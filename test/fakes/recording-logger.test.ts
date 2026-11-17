@@ -1,4 +1,8 @@
+import { describeLoggerContract } from '@test/contracts/logger.contract';
+
 import { RecordingLogger } from './recording-logger';
+
+describeLoggerContract('RecordingLogger', () => new RecordingLogger());
 
 describe('RecordingLogger', () => {
   it('records every entry with its level, message and context, in order', () => {
